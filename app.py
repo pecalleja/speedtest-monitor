@@ -9,7 +9,9 @@ from commands import take_measurement
 
 
 def create_app():
-    flask_app = Flask(__name__, static_folder=None, static_url_path=None)
+    flask_app = Flask(
+        __name__, static_folder="static", static_url_path="/static"
+    )
     flask_app.url_map.strict_slashes = False
 
     # App configuration
