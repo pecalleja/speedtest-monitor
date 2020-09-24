@@ -1,8 +1,6 @@
 import logging
 import os
 
-from dateutil import tz
-
 
 class BaseConfig:
     """
@@ -32,7 +30,7 @@ class BaseConfig:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # YOUR STUFF
-    TIMEZONE = tz.gettz("America/Mexico_City")
+    TIMEZONE = os.getenv("TIMEZONE", "America/Mexico_City")
     COMMAND = ["speedtest", "--format=json"]
     SPEEDFACTOR = float(
         os.getenv("SPEEDFACTOR", default="125.000696706770313")

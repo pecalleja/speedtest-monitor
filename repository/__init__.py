@@ -6,12 +6,10 @@ from datetime import datetime
 from typing import Dict
 from typing import Optional
 
+import pytz
 from flask_sqlalchemy import SQLAlchemy
 from injector import inject
 from marshmallow import EXCLUDE
-from marshmallow import fields
-from marshmallow import pre_load
-from marshmallow import Schema
 from sqlalchemy import desc
 from sqlalchemy.orm import Query
 from sqlalchemy.orm import Session
@@ -19,6 +17,7 @@ from sqlalchemy.orm import Session
 from configuration import BaseConfig
 from models import Measurement
 from models import Server
+from schemas import ResultSchema
 
 
 class DatabaseRepository(ABC):
@@ -42,39 +41,13 @@ class SpeedTestInterface(ABC):
         raise NotImplementedError
 
 
-class ResultSchema(Schema):
-    uuid = fields.String(allow_none=True)
-    download = fields.Float(allow_none=True)
-    upload = fields.Float(allow_none=True)
-    latency = fields.Float(allow_none=True)
-    isp = fields.String(allow_none=True)
-    server = fields.Dict(allow_none=True)
-    created_at = fields.DateTime(required=True)
-
-    @pre_load
-    def convert_mapping(self, data, **kwargs):
-        raw_download = data.get("download", {}).get("bandwidth", 0)
-        raw_upload = data.get("upload", {}).get("bandwidth", 0)
-        new_data = {
-            "uuid": data.get("result", {}).get("id"),
-            "download": raw_download / BaseConfig.SPEEDFACTOR,
-            "upload": raw_upload / BaseConfig.SPEEDFACTOR,
-            "latency": data.get("ping", {}).get("latency", 0),
-            "isp": data.get("isp"),
-            "server": data.get("server", {}),
-            "created_at": data.get("timestamp"),
-        }
-        return new_data
-
-
 class SpeedTestRepository(SpeedTestInterface, DatabaseRepository):
     def execute(self):
         result = subprocess.run(self.cmd, capture_output=True)
         if result.returncode != 0:
             print(result.stderr.decode(), file=sys.stderr)
-            fake_data = {
-                "timestamp": datetime.now(tz=BaseConfig.TIMEZONE).isoformat()
-            }
+            now_datetime = datetime.utcnow().replace(microsecond=0)
+            fake_data = {"timestamp": now_datetime.isoformat()}
             return fake_data
 
         data = json.loads(result.stdout.decode())

@@ -59,5 +59,5 @@ class Measurement(Base):
     server_id = Column(
         ForeignKey("server.id", ondelete="CASCADE"), nullable=True, index=True,
     )
-    created_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime(True), nullable=False)
     server = relationship("Server", backref="measurements")

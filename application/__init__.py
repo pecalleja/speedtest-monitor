@@ -4,8 +4,8 @@ from flask import Blueprint
 from flask import request
 from injector import inject
 
-from repository import ResultSchema
 from repository import SpeedTestRepository
+from schemas import ResultSchema
 
 
 app_blueprint = Blueprint(
