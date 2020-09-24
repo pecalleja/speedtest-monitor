@@ -45,7 +45,7 @@ class SpeedTestRepository(SpeedTestInterface, DatabaseRepository):
     def execute(self):
         result = subprocess.run(self.cmd, capture_output=True)
         if result.returncode != 0:
-            print(result.stderr.decode(), file=sys.stderr)
+            print(result.stderr.decode())
             now_datetime = datetime.utcnow().replace(microsecond=0)
             fake_data = {"timestamp": now_datetime.isoformat()}
             return fake_data
