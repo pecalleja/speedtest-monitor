@@ -44,8 +44,8 @@ class ResultSchema(Schema):
         raw_upload = data.get("upload", {}).get("bandwidth", 0)
         new_data = {
             "uuid": data.get("result", {}).get("id"),
-            "download": round(raw_download / BaseConfig.SPEEDFACTOR),
-            "upload": round(raw_upload / BaseConfig.SPEEDFACTOR),
+            "download": round(raw_download / BaseConfig.SPEEDFACTOR, 2),
+            "upload": round(raw_upload / BaseConfig.SPEEDFACTOR, 2),
             "latency": data.get("ping", {}).get("latency", 0),
             "isp": data.get("isp"),
             "server": data.get("server", {}),
