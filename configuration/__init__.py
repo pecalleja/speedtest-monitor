@@ -33,3 +33,7 @@ class BaseConfig:
 
     # YOUR STUFF
     TIMEZONE = tz.gettz("America/Mexico_City")
+    COMMAND = ["speedtest", "--format=json"]
+    SPEEDFACTOR = float(
+        os.getenv("SPEEDFACTOR", default="125.000696706770313")
+    )
