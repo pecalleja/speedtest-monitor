@@ -1,12 +1,10 @@
 import json
 import subprocess
-import sys
 from abc import ABC
 from datetime import datetime
 from typing import Dict
 from typing import Optional
 
-import pytz
 from flask_sqlalchemy import SQLAlchemy
 from injector import inject
 from marshmallow import EXCLUDE
@@ -15,6 +13,7 @@ from sqlalchemy.orm import Query
 from sqlalchemy.orm import Session
 
 from configuration import BaseConfig
+from filterers import FilterInterface
 from models import Measurement
 from models import Server
 from schemas import ResultSchema
@@ -24,8 +23,9 @@ class DatabaseRepository(ABC):
     db_session: Session
 
     @inject
-    def __init__(self, db: SQLAlchemy):
+    def __init__(self, db: SQLAlchemy, filterer: FilterInterface):
         self.db_session = db.session
+        self.filterer = filterer
 
     def add_item(self, data: Dict) -> Measurement:
         raise NotImplementedError
@@ -76,6 +76,8 @@ class SpeedTestRepository(SpeedTestInterface, DatabaseRepository):
         return new_obj
 
     def list_items(self, filters: Optional[Dict] = None) -> Query:
-        return self.db_session.query(Measurement).order_by(
-            desc(Measurement.created_at)
-        )
+        query = self.db_session.query(Measurement)
+        if filters:
+            self.filterer.load_data(filters)
+            query = self.filterer.apply(query)
+        return query.order_by(desc(Measurement.created_at))

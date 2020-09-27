@@ -11,6 +11,8 @@ from configuration import BaseConfig
 
 
 class CustomDateTimeField(fields.DateTime):
+    timezone = "UTC"
+
     @staticmethod
     def _convert_to_timezone(del_obj: Delorean) -> datetime:
         timezone = pytz.timezone(BaseConfig.TIMEZONE)
@@ -25,7 +27,7 @@ class CustomDateTimeField(fields.DateTime):
         return self._convert_to_timezone(del_obj).isoformat()
 
     def _deserialize(self, value, attr, data, **kwargs):
-        del_obj = datetime_parse(value, dayfirst=False, timezone="UTC")
+        del_obj = datetime_parse(value, dayfirst=False, timezone=self.timezone)
         return self._convert_to_timezone(del_obj)
 
 
@@ -52,3 +54,12 @@ class ResultSchema(Schema):
             "created_at": data.get("timestamp"),
         }
         return new_data
+
+
+class FilterDatetime(CustomDateTimeField):
+    timezone = BaseConfig.TIMEZONE
+
+
+class FilterSchema(Schema):
+    start = FilterDatetime()
+    end = FilterDatetime()

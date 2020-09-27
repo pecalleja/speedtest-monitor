@@ -2,6 +2,7 @@ from http import HTTPStatus
 
 from flask import Blueprint
 from flask import render_template
+from flask import request
 from injector import inject
 
 from repository import SpeedTestRepository
@@ -16,7 +17,8 @@ app_blueprint = Blueprint(
 @inject
 @app_blueprint.route("/measurement", methods=("GET",))
 def measurement(repository: SpeedTestRepository):
-    result = repository.list_items()
+    params = dict(request.args)
+    result = repository.list_items(params)
     return {
         "result": ResultSchema(
             many=True, only=("created_at", "upload", "download", "latency")
