@@ -3,6 +3,9 @@
 <head>
     <script src="/static/Chart.min.js"></script>
     <script src="/static/jquery.min.js"></script>
+    <script src="/static/moment.min.js"></script>
+    <script src="/static/moment-adapter.js"></script>
+    <script src="/static/utils.js"></script>
     <link rel="stylesheet" type="text/css" href="/static/Chart.min.css">
     <meta charset="UTF-8">
     <style>
@@ -18,74 +21,106 @@
 <div style="width:75%;">
     <canvas id="canvas"></canvas>
 </div>
+<label for="unit"></label>
+<select id="unit">
+    <option value="60">Hour</option>
+    <option value="1440" selected="">Day</option>
+    <option value="10080">Week</option>
+    <option value="43200">Month</option>
+</select>
+<button id="update">update</button>
 <script>
-    $.ajax({
-        url: '/measurement',
-        dataType: 'json',
-    }).done(function (json_data) {
-        var labels = json_data.result.map(function (e) {
-            return e.created_at;
-        });
-        var upload_values = json_data.result.map(function (e) {
-            return e.upload;
-        });
-        var download_values = json_data.result.map(function (e) {
-            return e.download
-        })
-        console.log(labels)
-        console.log(download_values)
-        console.log(upload_values)
-        var lineChartData = {
-            labels: labels,
+    function newDate(datetime_string) {
+        return moment(datetime_string).toDate();
+    }
+
+    let config = {
+        type: 'line',
+        data: {
             datasets: [{
                 label: 'Download Kbps',
-                borderColor: 'red',
                 backgroundColor: 'red',
+                borderColor: 'red',
                 fill: false,
-                data: download_values
-                ,
-                yAxisID: 'y-axis-1',
+                data: [],
             }, {
                 label: 'Upload Kbps',
-                borderColor: 'blue',
                 backgroundColor: 'blue',
+                borderColor: 'blue',
                 fill: false,
-                data: upload_values,
-                yAxisID: 'y-axis-2'
+                data: []
             }]
-        };
-        var ctx = document.getElementById('canvas').getContext('2d');
-        window.myLine = new Chart(ctx, {
-            type: 'line',
-            data: lineChartData,
-            options: {
-                responsive: true,
-                hoverMode: 'index',
-                stacked: false,
-                title: {
+        },
+        options: {
+            responsive: true,
+            title: {
+                display: true,
+                text: 'Internet Speed Monitor'
+            },
+            scales: {
+                xAxes: [{
+                    type: 'time',
                     display: true,
-                    text: 'Internet Speed Monitor'
-                },
-                scales: {
-                    yAxes: [{
-                        type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
+                    scaleLabel: {
                         display: true,
-                        position: 'left',
-                        id: 'y-axis-1',
-                    }, {
-                        type: 'linear', // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
+                        labelString: 'Date'
+                    },
+                    ticks: {
+                        major: {
+                            fontStyle: 'bold',
+                            fontColor: '#FF0000'
+                        }
+                    }
+                }],
+                yAxes: [{
+                    display: true,
+                    scaleLabel: {
                         display: true,
-                        position: 'right',
-                        id: 'y-axis-2',
-
-                        // grid line settings
-                        gridLines: {
-                            drawOnChartArea: false, // only want the grid lines for one axis to show up
-                        },
-                    }],
-                }
+                        labelString: 'value'
+                    }
+                }]
             }
+        }
+    };
+
+    function request_data(start) {
+        $.ajax({
+            url: '/measurement?start=' + start,
+            dataType: 'json',
+        }).done(function (json_data) {
+            config.data.datasets[1].data = []
+            config.data.datasets[0].data = []
+            let internet_speed_dataset = json_data.result.map(function (e) {
+                let upload_point = {
+                    x: newDate(e.created_at),
+                    y: e.upload
+                };
+                let download_point = {
+                    x: newDate(e.created_at),
+                    y: e.download
+                }
+                config.data.datasets[1].data.push(upload_point);
+                config.data.datasets[0].data.push(download_point);
+                return {
+                    x: newDate(e.created_at),
+                    upload: e.upload,
+                    download: e.download
+                }
+            });
+            window.myLine.update();
+            console.log(internet_speed_dataset)
         });
+    }
+
+    window.onload = function () {
+        let ctx = document.getElementById('canvas').getContext('2d');
+        window.myLine = new Chart(ctx, config);
+        request_data(moment().subtract(1, 'days').toISOString())
+    };
+
+    document.getElementById('update').addEventListener('click', function () {
+        let filter = document.getElementById('unit').value;
+        request_data(moment().subtract(filter, 'minutes').toISOString())
     });
 </script>
 </body>

@@ -56,10 +56,6 @@ class ResultSchema(Schema):
         return new_data
 
 
-class FilterDatetime(CustomDateTimeField):
-    timezone = BaseConfig.TIMEZONE
-
-
 class FilterSchema(Schema):
-    start = FilterDatetime()
-    end = FilterDatetime()
+    start = CustomDateTimeField()
+    end = CustomDateTimeField()
